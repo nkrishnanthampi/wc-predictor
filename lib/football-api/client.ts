@@ -1,7 +1,7 @@
-// api-football.com via RapidAPI
+// api-football.com direct subscription (api-sports.io)
 // World Cup 2026 = competition ID 1 (FIFA World Cup), season 2026
 
-const BASE_URL = 'https://api-football-v1.p.rapidapi.com/v3'
+const BASE_URL = 'https://v3.football.api-sports.io'
 const WC_LEAGUE_ID = 1   // FIFA World Cup
 const WC_SEASON = 2026
 
@@ -11,8 +11,7 @@ async function apiFetch(path: string, params: Record<string, string> = {}) {
 
   const res = await fetch(url.toString(), {
     headers: {
-      'X-RapidAPI-Key': process.env.RAPIDAPI_KEY!,
-      'X-RapidAPI-Host': process.env.RAPIDAPI_HOST!,
+      'x-apisports-key': process.env.API_FOOTBALL_KEY!,
     },
     next: { revalidate: 60 },
   })

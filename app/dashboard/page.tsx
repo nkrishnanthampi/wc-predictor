@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
-import { formatKickoff, matchResultLabel } from '@/lib/utils'
+import { formatKickoff } from '@/lib/utils'
 import { Calendar, Users, TrendingUp, Clock } from 'lucide-react'
 import type { League } from '@/lib/supabase/types'
 
@@ -13,7 +13,7 @@ export default async function DashboardPage() {
 
   const now = new Date().toISOString()
 
-  // Upcoming matches with no prediction yet
+  // Upcoming matches
   const { data: upcomingMatches } = await supabase
     .from('matches')
     .select('*')
@@ -21,6 +21,19 @@ export default async function DashboardPage() {
     .gt('kickoff_time', now)
     .order('kickoff_time', { ascending: true })
     .limit(5)
+
+  const upcomingMatchIds = upcomingMatches?.map(m => m.id) ?? []
+  const { data: upcomingPredictions } = upcomingMatchIds.length > 0
+    ? await supabase
+        .from('predictions')
+        .select('match_id, predicted_home_score, predicted_away_score')
+        .eq('user_id', user.id)
+        .in('match_id', upcomingMatchIds)
+    : { data: [] }
+
+  const predictionByMatch = Object.fromEntries(
+    (upcomingPredictions ?? []).map(p => [p.match_id, p])
+  )
 
   // User's predictions with match info
   const { data: recentPredictions } = await supabase
@@ -92,9 +105,15 @@ export default async function DashboardPage() {
                   </p>
                   <p className="text-xs text-gray-500">{formatKickoff(match.kickoff_time)}</p>
                 </div>
-                <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-medium">
-                  Predict →
-                </span>
+                {predictionByMatch[match.id] ? (
+                  <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium">
+                    {predictionByMatch[match.id].predicted_home_score} – {predictionByMatch[match.id].predicted_away_score}
+                  </span>
+                ) : (
+                  <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                    Predict →
+                  </span>
+                )}
               </Link>
             ))}
           </CardBody>
