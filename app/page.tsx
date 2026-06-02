@@ -1,11 +1,13 @@
 import { LoginForm } from '@/components/ui/LoginForm'
 import { Trophy } from 'lucide-react'
 
-export default function LandingPage({
+export default async function LandingPage({
   searchParams,
 }: {
   searchParams: Promise<{ redirectTo?: string; message?: string }>
 }) {
+  const { message } = await searchParams
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-green-800 to-green-600 px-4">
       <div className="w-full max-w-sm">
@@ -20,6 +22,12 @@ export default function LandingPage({
             Predict every match. Outscore your friends.
           </p>
         </div>
+
+        {message && (
+          <div className="mb-4 bg-red-500/20 border border-red-400 text-white text-sm rounded-lg px-4 py-3">
+            Auth error: <strong>{message}</strong>
+          </div>
+        )}
 
         <LoginForm searchParams={searchParams} />
 
