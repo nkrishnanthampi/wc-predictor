@@ -82,10 +82,7 @@ alter table public.league_members enable row level security;
 
 create policy "Members can view their league memberships"
   on public.league_members for select
-  using (user_id = auth.uid() or exists (
-    select 1 from public.league_members lm2
-    where lm2.league_id = league_members.league_id and lm2.user_id = auth.uid()
-  ));
+  using (user_id = auth.uid());
 
 create policy "Users can join leagues"
   on public.league_members for insert
