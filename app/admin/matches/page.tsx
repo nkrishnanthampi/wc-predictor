@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { Card, CardBody, CardHeader } from '@/components/ui/Card'
+import { Card, CardBody } from '@/components/ui/Card'
 import { ManualScoreForm } from '@/components/admin/ManualScoreForm'
 import { formatKickoffShort, STAGE_LABELS } from '@/lib/utils'
 import type { MatchStage } from '@/lib/supabase/types'
@@ -19,18 +19,22 @@ export default async function AdminMatchesPage() {
     .select('*')
     .order('kickoff_time', { ascending: true })
 
-  const finished = matches?.filter(m => m.status === 'finished') ?? []
-  const pending  = matches?.filter(m => m.status !== 'finished') ?? []
+  const withResults = matches?.filter(m => m.status === 'finished') ?? []
+  const upcoming    = matches?.filter(m => m.status !== 'finished') ?? []
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Manage Matches</h1>
 
+      {/* Upcoming — no result stored yet */}
       <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-        Upcoming / Live
+        Upcoming ({upcoming.length})
       </h2>
       <div className="space-y-2 mb-8">
-        {pending.map(match => (
+        {upcoming.length === 0 && (
+          <p className="text-sm text-gray-400">No upcoming matches.</p>
+        )}
+        {upcoming.map(match => (
           <Card key={match.id}>
             <CardBody className="py-3">
               <div className="flex items-center gap-4 flex-wrap">
@@ -49,26 +53,42 @@ export default async function AdminMatchesPage() {
         ))}
       </div>
 
+      {/* Results — finished matches (manual or API) */}
       <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-        Finished
+        Results ({withResults.length})
       </h2>
       <div className="space-y-2">
-        {finished.map(match => (
+        {withResults.length === 0 && (
+          <p className="text-sm text-gray-400">No results recorded yet.</p>
+        )}
+        {withResults.map(match => (
           <Card key={match.id} className="bg-gray-50">
             <CardBody className="py-3">
               <div className="flex items-center gap-4 flex-wrap">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-700">
-                    {match.home_team} vs {match.away_team}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-gray-700">
+                      {match.home_team} vs {match.away_team}
+                    </p>
+                    <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${
+                      match.manual_override
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {match.manual_override ? 'Manual' : 'API'}
+                    </span>
+                  </div>
                   <p className="text-xs text-gray-400">
                     {STAGE_LABELS[match.stage as MatchStage]} · {formatKickoffShort(match.kickoff_time)}
                   </p>
                 </div>
-                <span className="text-sm font-bold text-gray-900">
+                <span className="text-lg font-bold text-gray-900 shrink-0">
                   {match.home_score} – {match.away_score}
                 </span>
-                <ManualScoreForm matchId={match.id} existing={{ home: match.home_score!, away: match.away_score! }} />
+                <ManualScoreForm
+                  matchId={match.id}
+                  existing={{ home: match.home_score!, away: match.away_score! }}
+                />
               </div>
             </CardBody>
           </Card>

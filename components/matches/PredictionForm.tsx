@@ -58,6 +58,7 @@ export function PredictionForm({ matchId, homeTeam, awayTeam, existingPrediction
     } else {
       setSaved(true)
       router.refresh()
+      router.back()
     }
   }
 

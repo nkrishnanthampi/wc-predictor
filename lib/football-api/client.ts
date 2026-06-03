@@ -60,6 +60,7 @@ export function parseStage(round: string): import('../supabase/types').MatchStag
   return 'group'
 }
 
+
 /** Maps api-football status short code → our status enum */
 export function parseStatus(short: string): import('../supabase/types').MatchStatus {
   if (['FT', 'AET', 'PEN'].includes(short)) return 'finished'

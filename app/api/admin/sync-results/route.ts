@@ -27,7 +27,7 @@ export async function POST() {
     for (const f of finished) {
       if (f.goals.home === null || f.goals.away === null) continue
 
-      // Update match result in DB
+      // Update match result in DB — skip matches with a manual override
       const { data: match } = await adminClient
         .from('matches')
         .update({
@@ -37,6 +37,7 @@ export async function POST() {
           updated_at: new Date().toISOString(),
         })
         .eq('api_match_id', f.fixture.id)
+        .eq('manual_override', false)
         .select('id, stage')
         .single()
 

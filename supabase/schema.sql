@@ -114,6 +114,7 @@ create table public.matches (
   home_score      integer,
   away_score      integer,
   status          public.match_status not null default 'scheduled',
+  manual_override boolean not null default false,
   created_at      timestamptz not null default now(),
   updated_at      timestamptz not null default now()
 );

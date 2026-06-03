@@ -7,6 +7,7 @@ import { getEffectiveDate } from '@/lib/effective-date'
 import { calculatePoints } from '@/lib/scoring/points'
 import type { MatchStage } from '@/lib/supabase/types'
 import { Lock, Trophy } from 'lucide-react'
+import { TeamResults } from '@/components/matches/TeamResults'
 import clsx from 'clsx'
 
 export default async function MatchPage({ params }: { params: Promise<{ id: string }> }) {
@@ -99,6 +100,10 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           awayTeam={match.away_team ?? 'Away'}
           existingPrediction={prediction ?? undefined}
         />
+      )}
+
+      {match.home_team && match.away_team && (
+        <TeamResults homeTeam={match.home_team} awayTeam={match.away_team} />
       )}
 
       {/* Scoring guide */}

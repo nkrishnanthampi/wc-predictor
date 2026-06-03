@@ -1,21 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from './Button'
-import { Mail, CheckCircle } from 'lucide-react'
+import { Mail } from 'lucide-react'
 
 export function LoginForm({
   searchParams,
 }: {
   searchParams: Promise<{ redirectTo?: string; message?: string }>
 }) {
+  const router = useRouter()
   const [email, setEmail] = useState('')
-  const [sent, setSent] = useState(false)
+  const [step, setStep] = useState<'email' | 'code'>('email')
+  const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const codeRef = useRef<HTMLInputElement>(null)
 
-  async function sendMagicLink(e: React.FormEvent) {
+  async function sendCode(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError('')
@@ -23,39 +27,83 @@ export function LoginForm({
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+      options: { shouldCreateUser: true },
     })
 
     setLoading(false)
     if (error) {
       setError(error.message)
     } else {
-      setSent(true)
+      setStep('code')
+      setTimeout(() => codeRef.current?.focus(), 50)
     }
   }
 
-  if (sent) {
+  async function verifyCode(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+
+    const supabase = createClient()
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: code,
+      type: 'email',
+    })
+
+    setLoading(false)
+    if (error) {
+      setError(error.message)
+    } else {
+      router.push('/dashboard')
+      router.refresh()
+    }
+  }
+
+  if (step === 'code') {
     return (
-      <div className="bg-white rounded-2xl p-8 text-center shadow-xl">
-        <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
-        <h2 className="text-xl font-semibold text-gray-900">Check your email</h2>
-        <p className="mt-2 text-gray-600 text-sm">
-          We sent a magic link to <strong>{email}</strong>. Click it to sign in.
+      <form onSubmit={verifyCode} className="bg-white rounded-2xl p-6 shadow-xl">
+        <p className="text-sm text-gray-600 mb-4">
+          We sent a 6-digit code to <strong>{email}</strong>. Enter it below.
         </p>
+        <div className="mb-4">
+          <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-1">
+            Verification code
+          </label>
+          <input
+            id="code"
+            ref={codeRef}
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]{8}"
+            maxLength={8}
+            required
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+            placeholder="123456"
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm tracking-widest text-center font-mono focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          />
+        </div>
+
+        {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
+
+        <Button type="submit" className="w-full" size="lg" disabled={loading || code.length !== 8}>
+          {loading ? 'Verifying…' : 'Sign in'}
+        </Button>
+
         <button
-          onClick={() => { setSent(false); setEmail('') }}
-          className="mt-4 text-sm text-green-700 hover:underline"
+          type="button"
+          onClick={() => { setStep('email'); setCode(''); setError('') }}
+          className="mt-3 w-full text-sm text-gray-500 hover:text-gray-700"
         >
-          Use a different email
+          Back / use a different email
         </button>
-      </div>
+      </form>
     )
   }
 
   return (
-    <form onSubmit={sendMagicLink} className="bg-white rounded-2xl p-6 shadow-xl">
+    <form onSubmit={sendCode} className="bg-white rounded-2xl p-6 shadow-xl">
       <div className="mb-4">
         <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
           Email address
@@ -71,13 +119,11 @@ export function LoginForm({
         />
       </div>
 
-      {error && (
-        <p className="text-red-600 text-sm mb-3">{error}</p>
-      )}
+      {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
 
       <Button type="submit" className="w-full" size="lg" disabled={loading}>
         <Mail className="h-4 w-4" />
-        {loading ? 'Sending…' : 'Send magic link'}
+        {loading ? 'Sending…' : 'Send code'}
       </Button>
     </form>
   )

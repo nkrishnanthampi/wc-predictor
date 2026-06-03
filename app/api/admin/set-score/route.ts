@@ -16,19 +16,26 @@ export async function POST(request: Request) {
   const { matchId, homeScore, awayScore } = await request.json()
   const adminClient = await createAdminClient()
 
-  const { data: match } = await adminClient
+  const { error: updateError } = await adminClient
     .from('matches')
     .update({
       home_score: homeScore,
       away_score: awayScore,
       status: 'finished',
+      manual_override: true,
       updated_at: new Date().toISOString(),
     })
     .eq('id', matchId)
+
+  if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
+
+  const { data: match, error: fetchError } = await adminClient
+    .from('matches')
     .select('id, stage')
+    .eq('id', matchId)
     .single()
 
-  if (!match) return NextResponse.json({ error: 'Match not found' }, { status: 404 })
+  if (!match) return NextResponse.json({ error: fetchError?.message ?? 'Match not found' }, { status: 404 })
 
   // Score all predictions
   const { data: predictions } = await adminClient
