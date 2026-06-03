@@ -4,6 +4,12 @@ export type MatchStatus = 'scheduled' | 'live' | 'finished' | 'postponed'
 export type Database = {
   public: {
     Tables: {
+      app_config: {
+        Row: { key: string; value: string }
+        Insert: { key: string; value: string }
+        Update: { value?: string }
+        Relationships: []
+      }
       profiles: {
         Row: { id: string; email: string; display_name: string; is_admin: boolean; created_at: string }
         Insert: { id: string; email: string; display_name: string; is_admin?: boolean }

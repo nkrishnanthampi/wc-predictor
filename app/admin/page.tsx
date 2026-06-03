@@ -5,7 +5,9 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { SyncFixturesButton } from '@/components/admin/SyncFixturesButton'
 import { SyncResultsButton } from '@/components/admin/SyncResultsButton'
-import { Shield, RefreshCw, CheckSquare } from 'lucide-react'
+import { EffectiveDateForm } from '@/components/admin/EffectiveDateForm'
+import { getRawEffectiveDate } from '@/lib/effective-date'
+import { Shield, RefreshCw, CheckSquare, Clock } from 'lucide-react'
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -19,6 +21,8 @@ export default async function AdminPage() {
     .single()
 
   if (!profile?.is_admin) redirect('/dashboard')
+
+  const effectiveDateRaw = await getRawEffectiveDate()
 
   const { count: matchCount } = await supabase
     .from('matches')
@@ -90,6 +94,21 @@ export default async function AdminPage() {
               Run this after each match day (or set up a cron job on Vercel).
             </p>
             <SyncResultsButton />
+          </CardBody>
+        </Card>
+
+        {/* Effective date */}
+        <Card>
+          <CardHeader className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-amber-600" />
+            <h2 className="font-semibold text-gray-900">Simulate Effective Date</h2>
+          </CardHeader>
+          <CardBody>
+            <p className="text-sm text-gray-600 mb-4">
+              Override the current date used across the app. Useful for testing how the dashboard
+              and match pages look once the tournament is underway. Clear to return to real time.
+            </p>
+            <EffectiveDateForm currentValue={effectiveDateRaw} />
           </CardBody>
         </Card>
 

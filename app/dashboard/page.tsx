@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { formatKickoff } from '@/lib/utils'
+import { getEffectiveDateISO } from '@/lib/effective-date'
 import { Calendar, Users, TrendingUp, Clock } from 'lucide-react'
 import type { League } from '@/lib/supabase/types'
 
@@ -11,7 +12,7 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/')
 
-  const now = new Date().toISOString()
+  const now = await getEffectiveDateISO()
 
   // Upcoming matches
   const { data: upcomingMatches } = await supabase

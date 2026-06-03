@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardBody } from '@/components/ui/Card'
 import { formatKickoffShort, isPredictionLocked, STAGE_LABELS, matchResultLabel } from '@/lib/utils'
+import { getEffectiveDate } from '@/lib/effective-date'
 import type { MatchStage } from '@/lib/supabase/types'
 import { Lock, CheckCircle, Circle } from 'lucide-react'
 import clsx from 'clsx'
@@ -23,6 +24,7 @@ export default async function MatchesPage() {
     .eq('user_id', user.id)
 
   const predMap = new Map(myPredictions?.map(p => [p.match_id, p]) ?? [])
+  const asOf = await getEffectiveDate()
 
   // Group by stage
   const byStage = new Map<MatchStage, typeof matches>()
@@ -46,7 +48,7 @@ export default async function MatchesPage() {
           <div className="space-y-2">
             {byStage.get(stage)!.map(match => {
               const pred = predMap.get(match.id)
-              const locked = isPredictionLocked(match.kickoff_time)
+              const locked = isPredictionLocked(match.kickoff_time, asOf)
               const finished = match.status === 'finished'
 
               return (

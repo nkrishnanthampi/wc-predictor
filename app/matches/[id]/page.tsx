@@ -3,6 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import { PredictionForm } from '@/components/matches/PredictionForm'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { formatKickoff, isPredictionLocked, STAGE_LABELS, matchResultLabel } from '@/lib/utils'
+import { getEffectiveDate } from '@/lib/effective-date'
 import { calculatePoints } from '@/lib/scoring/points'
 import type { MatchStage } from '@/lib/supabase/types'
 import { Lock, Trophy } from 'lucide-react'
@@ -29,7 +30,8 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
     .eq('match_id', id)
     .maybeSingle()
 
-  const locked = isPredictionLocked(match.kickoff_time)
+  const asOf = await getEffectiveDate()
+  const locked = isPredictionLocked(match.kickoff_time, asOf)
   const finished = match.status === 'finished'
 
   return (

@@ -198,3 +198,20 @@ create index on public.league_members (league_id);
 create index on public.league_members (user_id);
 create index on public.matches (kickoff_time);
 create index on public.matches (status);
+
+-- ─── APP CONFIG ───────────────────────────────────────────────────────────────
+-- see migrations/001_app_config.sql
+create table public.app_config (
+  key    text primary key,
+  value  text not null
+);
+
+alter table public.app_config enable row level security;
+
+create policy "Anyone can read app config"
+  on public.app_config for select using (true);
+
+create policy "Admins can manage app config"
+  on public.app_config for all
+  using (exists (select 1 from public.profiles where id = auth.uid() and is_admin = true))
+  with check (exists (select 1 from public.profiles where id = auth.uid() and is_admin = true));

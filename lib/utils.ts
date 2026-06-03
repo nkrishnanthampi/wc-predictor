@@ -20,8 +20,8 @@ export function matchResultLabel(homeScore: number | null, awayScore: number | n
   return `${homeScore} – ${awayScore}`
 }
 
-export function isPredictionLocked(kickoffTime: string): boolean {
-  return new Date(kickoffTime) <= new Date()
+export function isPredictionLocked(kickoffTime: string, asOf?: Date): boolean {
+  return new Date(kickoffTime) <= (asOf ?? new Date())
 }
 
 export const STAGE_LABELS: Record<MatchStage, string> = {
