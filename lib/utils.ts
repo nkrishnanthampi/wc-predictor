@@ -3,7 +3,7 @@ import type { MatchStage } from './supabase/types'
 
 export function formatKickoff(iso: string): string {
   const d = new Date(iso)
-  return format(d, "EEE d MMM, HH:mm 'UTC'xxx")
+  return format(d, 'EEE d MMM, HH:mm')
 }
 
 export function formatKickoffShort(iso: string): string {

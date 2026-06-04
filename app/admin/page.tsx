@@ -14,13 +14,7 @@ export default async function AdminPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.is_admin) redirect('/dashboard')
+  if (user.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) redirect('/dashboard')
 
   const effectiveDateRaw = await getRawEffectiveDate()
 

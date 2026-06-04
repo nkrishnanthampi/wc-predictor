@@ -42,6 +42,7 @@ export type Database = {
           away_score: number | null
           status: MatchStatus
           manual_override: boolean
+          generated_for_user_id: string | null
           created_at: string
           updated_at: string
         }
@@ -57,6 +58,7 @@ export type Database = {
           away_score?: number | null
           status?: MatchStatus
           manual_override?: boolean
+          generated_for_user_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -71,6 +73,7 @@ export type Database = {
           away_score?: number | null
           status?: MatchStatus
           manual_override?: boolean
+          generated_for_user_id?: string | null
           updated_at?: string
         }
         Relationships: []

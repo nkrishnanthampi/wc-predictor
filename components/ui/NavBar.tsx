@@ -5,13 +5,15 @@ import { usePathname } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Trophy, LayoutDashboard, Calendar, Users, Shield, LogOut } from 'lucide-react'
+import { Trophy, LayoutDashboard, Calendar, Users, Shield, LogOut, Globe, Swords } from 'lucide-react'
 import clsx from 'clsx'
 
 const NAV_LINKS = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/matches', label: 'Matches', icon: Calendar },
-  { href: '/leagues', label: 'My Leagues', icon: Users },
+  { href: '/dashboard',  label: 'Home',              icon: LayoutDashboard },
+  { href: '/matches',    label: 'Group Matches',     icon: Calendar },
+  { href: '/knockout',   label: 'Knockout Matches',  icon: Swords },
+  { href: '/teams',      label: 'Teams',             icon: Globe },
+  { href: '/leagues',    label: 'My Leagues',        icon: Users },
 ]
 
 export function NavBar({ user }: { user: User }) {
@@ -25,58 +27,57 @@ export function NavBar({ user }: { user: User }) {
     router.refresh()
   }
 
+  function navLink(href: string, label: string, Icon: React.ElementType) {
+    const active = pathname.startsWith(href)
+    return (
+      <Link
+        key={href}
+        href={href}
+        className={clsx(
+          'flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-semibold tracking-wide transition-colors',
+          active
+            ? 'bg-fifa-gold text-fifa-black'
+            : 'text-white/70 hover:text-white hover:bg-white/10'
+        )}
+      >
+        <Icon className="h-4 w-4 shrink-0" />
+        <span className="hidden md:inline">{label}</span>
+      </Link>
+    )
+  }
+
   return (
-    <nav className="bg-green-700 text-white shadow-lg">
+    <nav className="bg-fifa-black text-white shadow-lg">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center justify-between h-14">
-          <Link href="/dashboard" className="flex items-center gap-2 font-bold text-lg">
-            <Trophy className="h-5 w-5 text-yellow-300" />
-            <span className="hidden sm:inline">WC Predictor 2026</span>
-            <span className="sm:hidden">WC 2026</span>
+
+          {/* Logo */}
+          <Link href="/dashboard" className="flex items-center gap-2 font-black text-lg tracking-tight">
+            <Trophy className="h-5 w-5 text-fifa-gold" />
+            <span className="hidden sm:inline">WC Predictor <span className="text-fifa-gold">2026</span></span>
+            <span className="sm:hidden text-fifa-gold">2026</span>
           </Link>
 
-          <div className="flex items-center gap-1">
-            {NAV_LINKS.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                className={clsx(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-colors',
-                  pathname.startsWith(href)
-                    ? 'bg-green-900 text-white'
-                    : 'text-green-100 hover:bg-green-600'
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                <span className="hidden md:inline">{label}</span>
-              </Link>
-            ))}
+          {/* Nav links */}
+          <div className="flex items-center gap-0.5">
+            {NAV_LINKS.map(({ href, label, icon: Icon }) => navLink(href, label, Icon))}
 
-            {user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL && (
-              <Link
-                href="/admin"
-                className={clsx(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-colors',
-                  pathname.startsWith('/admin')
-                    ? 'bg-green-900 text-white'
-                    : 'text-green-100 hover:bg-green-600'
-                )}
-              >
-                <Shield className="h-4 w-4" />
-                <span className="hidden md:inline">Admin</span>
-              </Link>
-            )}
+            {user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL && navLink('/admin', 'Admin', Shield)}
 
             <button
               onClick={signOut}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium text-green-100 hover:bg-green-600 transition-colors ml-1"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-semibold text-white/60 hover:text-white hover:bg-white/10 transition-colors ml-1"
             >
               <LogOut className="h-4 w-4" />
               <span className="hidden md:inline">Sign out</span>
             </button>
           </div>
+
         </div>
       </div>
+
+      {/* Gold accent line under nav */}
+      <div className="h-0.5 bg-fifa-gold" />
     </nav>
   )
 }

@@ -5,7 +5,7 @@ const BASE_URL = 'https://v3.football.api-sports.io'
 const WC_LEAGUE_ID = 1   // FIFA World Cup
 const WC_SEASON = 2026
 
-async function apiFetch(path: string, params: Record<string, string> = {}) {
+async function apiFetch(path: string, params: Record<string, string> = {}, revalidate = 60) {
   const url = new URL(`${BASE_URL}${path}`)
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
 
@@ -13,11 +13,37 @@ async function apiFetch(path: string, params: Record<string, string> = {}) {
     headers: {
       'x-apisports-key': process.env.API_FOOTBALL_KEY!,
     },
-    next: { revalidate: 60 },
+    next: { revalidate },
   })
 
   if (!res.ok) throw new Error(`api-football error: ${res.status} ${res.statusText}`)
   return res.json()
+}
+
+export interface ApiTeam {
+  id: number
+  name: string
+  code: string
+  country: string
+  national: boolean
+  logo: string
+}
+
+export interface ApiPlayer {
+  id: number
+  name: string
+  age: number
+  number: number | null
+  position: string
+  photo: string
+}
+
+export interface ApiCoach {
+  id: number
+  name: string
+  nationality: string
+  age: number | null
+  photo: string
 }
 
 export interface ApiFixture {
@@ -45,6 +71,48 @@ export async function fetchFixtures(): Promise<ApiFixture[]> {
 export async function fetchFixtureById(fixtureId: number): Promise<ApiFixture | null> {
   const data = await apiFetch('/fixtures', { id: String(fixtureId) })
   return data.response?.[0] ?? null
+}
+
+// api-football uses different names for some national teams
+const AFB_NAME_MAP: Record<string, string> = {
+  'south korea':   'korea republic',
+  'united states': 'usa',
+  'turkey':        'turkiye',
+  'ivory coast':   "cote d'ivoire",
+}
+
+export async function fetchTeamByName(name: string): Promise<ApiTeam | null> {
+  try {
+    const search = AFB_NAME_MAP[name.toLowerCase()] ?? name
+    const data = await apiFetch('/teams', { search }, 3600)
+    // Prefer national teams; fall back to first result
+    const results: { team: ApiTeam }[] = data.response ?? []
+    return (
+      results.find(r => r.team.national)?.team ??
+      results[0]?.team ??
+      null
+    )
+  } catch {
+    return null
+  }
+}
+
+export async function fetchTeamSquad(teamId: number): Promise<ApiPlayer[]> {
+  try {
+    const data = await apiFetch('/players/squads', { team: String(teamId) }, 3600)
+    return data.response?.[0]?.players ?? []
+  } catch {
+    return []
+  }
+}
+
+export async function fetchTeamCoach(teamId: number): Promise<ApiCoach | null> {
+  try {
+    const data = await apiFetch('/coachs', { team: String(teamId) }, 3600)
+    return data.response?.[0] ?? null
+  } catch {
+    return null
+  }
 }
 
 /** Maps api-football round string → our stage enum */

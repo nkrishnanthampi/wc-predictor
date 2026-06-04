@@ -35,6 +35,7 @@ export interface EspnTeam {
   id: string
   displayName: string
   abbreviation: string
+  rank?: number
 }
 
 export interface EspnResult {

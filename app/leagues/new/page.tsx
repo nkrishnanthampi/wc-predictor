@@ -6,6 +6,7 @@ export default async function NewLeaguePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/')
+  if (user.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) redirect('/leagues')
 
   return (
     <div className="max-w-md mx-auto px-4 py-6">

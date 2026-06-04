@@ -19,28 +19,37 @@ export default async function LeaguesPage() {
   type LeagueWithCount = League & { league_members?: { count: number }[] }
   const memberships = membershipsRaw as unknown as Array<{ leagues: LeagueWithCount | null }> | null
 
+  const isAdmin = user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">My Leagues</h1>
-        <Link href="/leagues/new">
-          <Button size="sm">
-            <Plus className="h-4 w-4" />
-            New league
-          </Button>
-        </Link>
+        {isAdmin && (
+          <Link href="/leagues/new">
+            <Button size="sm">
+              <Plus className="h-4 w-4" />
+              New league
+            </Button>
+          </Link>
+        )}
       </div>
 
       {memberships?.length === 0 && (
         <Card>
           <CardBody className="text-center py-12">
             <Users className="h-12 w-12 text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-500 mb-4">You haven&apos;t joined any leagues yet.</p>
-            <Link href="/leagues/new">
-              <Button>Create your first league</Button>
-            </Link>
+            {isAdmin ? (
+              <>
+                <p className="text-gray-500 mb-4">No leagues yet.</p>
+                <Link href="/leagues/new">
+                  <Button>Create your first league</Button>
+                </Link>
+              </>
+            ) : (
+              <p className="text-gray-500">You haven&apos;t joined any leagues yet. Ask your admin for an invite link.</p>
+            )}
           </CardBody>
         </Card>
       )}
