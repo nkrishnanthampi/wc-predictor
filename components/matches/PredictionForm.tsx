@@ -5,22 +5,55 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
+import { Sparkles } from 'lucide-react'
 import type { Prediction } from '@/lib/supabase/types'
+
+interface AiSuggestion {
+  homeScore: number
+  awayScore: number
+  rationale: string
+}
 
 interface Props {
   matchId: string
   homeTeam: string
   awayTeam: string
+  stage?: string
   existingPrediction?: Prediction
 }
 
-export function PredictionForm({ matchId, homeTeam, awayTeam, existingPrediction }: Props) {
+export function PredictionForm({ matchId, homeTeam, awayTeam, stage = 'group', existingPrediction }: Props) {
   const router = useRouter()
   const [homeScore, setHomeScore] = useState(existingPrediction?.predicted_home_score ?? 0)
   const [awayScore, setAwayScore] = useState(existingPrediction?.predicted_away_score ?? 0)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const [aiSuggestion, setAiSuggestion] = useState<AiSuggestion | null>(null)
+  const [loadingAi, setLoadingAi] = useState(false)
+  const [aiError, setAiError] = useState('')
+
+  async function fetchAiSuggestion() {
+    setLoadingAi(true)
+    setAiSuggestion(null)
+    setAiError('')
+    try {
+      const res = await fetch(
+        `/api/ai-prediction?homeTeam=${encodeURIComponent(homeTeam)}&awayTeam=${encodeURIComponent(awayTeam)}&stage=${stage}`
+      )
+      const data = await res.json()
+      console.log('[ai-prediction]', data)
+      if (res.ok) {
+        setAiSuggestion(data)
+      } else {
+        setAiError(data.detail ?? data.error ?? 'AI suggestion failed')
+      }
+    } catch {
+      setAiError('Could not reach AI service')
+    } finally {
+      setLoadingAi(false)
+    }
+  }
 
   function winner() {
     if (homeScore > awayScore) return homeTeam
@@ -85,6 +118,47 @@ export function PredictionForm({ matchId, homeTeam, awayTeam, existingPrediction
               <p className="text-sm font-medium text-gray-700 mb-2 truncate">{awayTeam}</p>
               <ScoreInput value={awayScore} onChange={setAwayScore} />
             </div>
+          </div>
+
+          {/* AI suggestion */}
+          <div className="mb-4">
+            <button
+              type="button"
+              onClick={fetchAiSuggestion}
+              disabled={loadingAi}
+              className="w-full flex items-center justify-center gap-1.5 text-xs text-purple-600 hover:text-purple-700 border border-purple-200 hover:border-purple-300 rounded-lg py-2 transition-colors disabled:opacity-50"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              {loadingAi ? 'Getting AI suggestion…' : 'Suggest a score'}
+            </button>
+
+            {aiError && (
+              <p className="mt-2 text-xs text-red-500 text-center">{aiError}</p>
+            )}
+
+            {aiSuggestion && (
+              <div className="mt-2 rounded-lg bg-purple-50 border border-purple-100 px-3 py-2.5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-purple-500 mb-0.5">AI suggests</p>
+                    <p className="text-lg font-bold text-purple-800">
+                      {aiSuggestion.homeScore} – {aiSuggestion.awayScore}
+                    </p>
+                    <p className="text-xs text-purple-600 mt-0.5 leading-snug">{aiSuggestion.rationale}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHomeScore(aiSuggestion.homeScore)
+                      setAwayScore(aiSuggestion.awayScore)
+                    }}
+                    className="ml-3 shrink-0 text-xs bg-purple-600 hover:bg-purple-700 text-white rounded-md px-3 py-1.5 transition-colors"
+                  >
+                    Use this
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <p className="text-center text-sm text-gray-500 mb-4">

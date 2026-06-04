@@ -8,6 +8,7 @@ import { calculatePoints } from '@/lib/scoring/points'
 import type { MatchStage } from '@/lib/supabase/types'
 import { Lock, Trophy } from 'lucide-react'
 import { TeamResults } from '@/components/matches/TeamResults'
+import { BackButton } from '@/components/ui/BackButton'
 import clsx from 'clsx'
 
 export default async function MatchPage({ params }: { params: Promise<{ id: string }> }) {
@@ -37,6 +38,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6">
+      <BackButton />
       <p className="text-sm text-gray-500 mb-1">{STAGE_LABELS[match.stage as MatchStage]}</p>
       <h1 className="text-2xl font-bold text-gray-900 mb-1">
         {match.home_team ?? 'TBD'} vs {match.away_team ?? 'TBD'}
@@ -98,6 +100,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           matchId={match.id}
           homeTeam={match.home_team ?? 'Home'}
           awayTeam={match.away_team ?? 'Away'}
+          stage={match.stage}
           existingPrediction={prediction ?? undefined}
         />
       )}
