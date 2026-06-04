@@ -7,7 +7,7 @@ import { SyncFixturesButton } from '@/components/admin/SyncFixturesButton'
 import { SyncResultsButton } from '@/components/admin/SyncResultsButton'
 import { EffectiveDateForm } from '@/components/admin/EffectiveDateForm'
 import { getRawEffectiveDate } from '@/lib/effective-date'
-import { Shield, RefreshCw, CheckSquare, Clock } from 'lucide-react'
+import { Shield, RefreshCw, CheckSquare, Clock, Users } from 'lucide-react'
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -115,6 +115,22 @@ export default async function AdminPage() {
             </div>
             <Link href="/admin/matches">
               <Button variant="secondary" size="sm">Manage matches</Button>
+            </Link>
+          </CardBody>
+        </Card>
+
+        {/* Leagues link */}
+        <Card>
+          <CardBody className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-blue-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-900">Manage league members</p>
+                <p className="text-xs text-gray-500">Add or remove users from any league</p>
+              </div>
+            </div>
+            <Link href="/admin/leagues">
+              <Button variant="secondary" size="sm">Manage leagues</Button>
             </Link>
           </CardBody>
         </Card>
