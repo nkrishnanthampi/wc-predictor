@@ -3,11 +3,11 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { SyncFixturesButton } from '@/components/admin/SyncFixturesButton'
 import { SyncResultsButton } from '@/components/admin/SyncResultsButton'
 import { EffectiveDateForm } from '@/components/admin/EffectiveDateForm'
+import { CompareFixturesPanel } from '@/components/admin/CompareFixturesPanel'
 import { getRawEffectiveDate } from '@/lib/effective-date'
-import { Shield, RefreshCw, CheckSquare, Clock, Users } from 'lucide-react'
+import { Shield, CheckSquare, Clock, Users, GitCompare } from 'lucide-react'
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -61,33 +61,47 @@ export default async function AdminPage() {
       </div>
 
       <div className="space-y-4">
-        {/* Sync fixtures */}
+        {/* Compare fixtures */}
         <Card>
           <CardHeader className="flex items-center gap-2">
-            <RefreshCw className="h-5 w-5 text-blue-600" />
-            <h2 className="font-semibold text-gray-900">Sync Fixtures</h2>
+            <GitCompare className="h-5 w-5 text-purple-600" />
+            <h2 className="font-semibold text-gray-900">Compare Fixtures</h2>
           </CardHeader>
           <CardBody>
             <p className="text-sm text-gray-600 mb-4">
-              Pull all 2026 World Cup fixtures from api-football.com. Safe to run multiple times —
-              existing fixtures are upserted. Run this once before the tournament starts.
+              Compare the current matches table against football-data.org. Shows missing fixtures,
+              orphaned DB rows, and field-level differences. Read-only — makes no changes.
             </p>
-            <SyncFixturesButton />
+            <CompareFixturesPanel />
           </CardBody>
         </Card>
 
-        {/* Sync results */}
+        {/* Leagues link */}
         <Card>
-          <CardHeader className="flex items-center gap-2">
-            <CheckSquare className="h-5 w-5 text-green-600" />
-            <h2 className="font-semibold text-gray-900">Sync Results & Score Predictions</h2>
-          </CardHeader>
-          <CardBody>
-            <p className="text-sm text-gray-600 mb-4">
-              Fetch latest results for finished matches and award points to all predictions.
-              Run this after each match day (or set up a cron job on Vercel).
-            </p>
-            <SyncResultsButton />
+          <CardBody className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-blue-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-900">Manage league members</p>
+                <p className="text-xs text-gray-500">Add or remove users from any league</p>
+              </div>
+            </div>
+            <Link href="/admin/leagues">
+              <Button variant="secondary" size="sm">Manage leagues</Button>
+            </Link>
+          </CardBody>
+        </Card>
+
+        {/* Matches link */}
+        <Card>
+          <CardBody className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-900">View / edit matches</p>
+              <p className="text-xs text-gray-500">Manually override scores if the API is wrong</p>
+            </div>
+            <Link href="/admin/matches">
+              <Button variant="secondary" size="sm">Manage matches</Button>
+            </Link>
           </CardBody>
         </Card>
 
@@ -106,32 +120,19 @@ export default async function AdminPage() {
           </CardBody>
         </Card>
 
-        {/* Matches link */}
+        {/* Sync results */}
         <Card>
-          <CardBody className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-900">View / edit matches</p>
-              <p className="text-xs text-gray-500">Manually override scores if the API is wrong</p>
-            </div>
-            <Link href="/admin/matches">
-              <Button variant="secondary" size="sm">Manage matches</Button>
-            </Link>
-          </CardBody>
-        </Card>
-
-        {/* Leagues link */}
-        <Card>
-          <CardBody className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-blue-600" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">Manage league members</p>
-                <p className="text-xs text-gray-500">Add or remove users from any league</p>
-              </div>
-            </div>
-            <Link href="/admin/leagues">
-              <Button variant="secondary" size="sm">Manage leagues</Button>
-            </Link>
+          <CardHeader className="flex items-center gap-2">
+            <CheckSquare className="h-5 w-5 text-green-600" />
+            <h2 className="font-semibold text-gray-900">Sync Results & Score Predictions</h2>
+          </CardHeader>
+          <CardBody>
+            <p className="text-sm text-gray-600 mb-4">
+              Pulls all WC fixtures from football-data.org. Adds confirmed knockout fixtures to the
+              database, updates any that now have real teams, and scores predictions for finished matches.
+              Run after each match day and after each knockout round concludes.
+            </p>
+            <SyncResultsButton />
           </CardBody>
         </Card>
       </div>

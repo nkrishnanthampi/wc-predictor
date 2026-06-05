@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { CreateLeagueForm } from '@/components/leagues/CreateLeagueForm'
+import { createLeague } from './actions'
 
 export default async function NewLeaguePage() {
   const supabase = await createClient()
@@ -11,7 +12,7 @@ export default async function NewLeaguePage() {
   return (
     <div className="max-w-md mx-auto px-4 py-6">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Create a League</h1>
-      <CreateLeagueForm userId={user.id} />
+      <CreateLeagueForm action={createLeague} />
     </div>
   )
 }

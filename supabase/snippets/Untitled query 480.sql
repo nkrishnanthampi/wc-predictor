@@ -1,0 +1,1 @@
+delete from matches where generated_for_user_id is not null

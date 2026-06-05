@@ -19,9 +19,10 @@ export async function POST(req: Request) {
   }
 
   const adminClient = await createAdminClient()
+  await adminClient.from('app_config').delete().eq('key', 'effective_date')
   const { error: dbError } = await adminClient
     .from('app_config')
-    .upsert({ key: 'effective_date', value: new Date(date).toISOString() }, { onConflict: 'key' })
+    .insert({ key: 'effective_date', value: new Date(date).toISOString() })
 
   if (dbError) return NextResponse.json({ error: dbError.message }, { status: 500 })
   return NextResponse.json({ success: true })

@@ -1,13 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Card, CardBody } from '@/components/ui/Card'
 
-export function CreateLeagueForm({ userId }: { userId: string }) {
-  const router = useRouter()
+type CreateLeagueAction = (name: string) => Promise<{ error: string } | never>
+
+export function CreateLeagueForm({ action }: { action: CreateLeagueAction }) {
   const [name, setName] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -18,26 +17,11 @@ export function CreateLeagueForm({ userId }: { userId: string }) {
     setSaving(true)
     setError('')
 
-    const supabase = createClient()
-
-    // Create the league
-    const { data: league, error: leagueErr } = await supabase
-      .from('leagues')
-      .insert({ name: name.trim(), created_by: userId })
-      .select()
-      .single()
-
-    if (leagueErr || !league) {
-      setError(leagueErr?.message ?? 'Failed to create league')
+    const result = await action(name.trim())
+    if (result?.error) {
+      setError(result.error)
       setSaving(false)
-      return
     }
-
-    // Auto-join as creator
-    await supabase.from('league_members').insert({ league_id: league.id, user_id: userId })
-
-    router.push(`/leagues/${league.id}`)
-    router.refresh()
   }
 
   return (

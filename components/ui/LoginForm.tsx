@@ -64,7 +64,7 @@ export function LoginForm({
     return (
       <form onSubmit={verifyCode} className="bg-white rounded-2xl p-6 shadow-xl">
         <p className="text-sm text-gray-600 mb-4">
-          We sent a 6-digit code to <strong>{email}</strong>. Enter it below.
+          We sent an 8-digit code to <strong>{email}</strong>. Enter it below.
         </p>
         <div className="mb-4">
           <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-1">

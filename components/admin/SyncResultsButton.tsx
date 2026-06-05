@@ -15,7 +15,12 @@ export function SyncResultsButton() {
       const res = await fetch('/api/admin/sync-results', { method: 'POST' })
       const json = await res.json()
       if (json.success) {
-        setResult(`✓ Updated ${json.matchesUpdated} matches, scored ${json.predictionsScored} predictions`)
+        const parts = []
+        if (json.fixturesInserted > 0) parts.push(`${json.fixturesInserted} fixtures added`)
+        if (json.fixturesUpdated > 0)  parts.push(`${json.fixturesUpdated} fixtures updated`)
+        if (json.matchesUpdated > 0)   parts.push(`${json.matchesUpdated} results synced`)
+        if (json.predictionsScored > 0) parts.push(`${json.predictionsScored} predictions scored`)
+        setResult(parts.length > 0 ? `✓ ${parts.join(', ')}` : '✓ Nothing new to sync')
       } else {
         setResult(`Error: ${json.error}`)
       }
@@ -29,7 +34,7 @@ export function SyncResultsButton() {
     <div className="space-y-2">
       <Button onClick={sync} disabled={loading}>
         <CheckSquare className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-        {loading ? 'Syncing results…' : 'Sync results & score predictions'}
+        {loading ? 'Syncing…' : 'Sync fixtures & results'}
       </Button>
       {result && <p className="text-sm text-gray-600">{result}</p>}
     </div>
