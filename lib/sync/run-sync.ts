@@ -112,6 +112,9 @@ export async function runSync(): Promise<SyncResult> {
         continue
       }
 
+      // Only insert once both teams are confirmed — skip TBD fixtures
+      if (!home || !away) continue
+
       const { error } = await adminClient.from('matches').insert({
         stage: dbStage,
         home_team: home,
