@@ -98,20 +98,21 @@ export async function runSync(): Promise<SyncResult> {
         const needsTeamUpdate = (!existing.home_team && home) || (!existing.away_team && away)
         const nowFinished = fdStatusToDb(f.status) === 'finished' && existing.status !== 'finished'
         if (needsTeamUpdate || nowFinished) {
-          const patch: Record<string, unknown> = { updated_at: new Date().toISOString() }
-          if (needsTeamUpdate) { patch.home_team = home; patch.away_team = away }
-          if (nowFinished) {
-            patch.status = 'finished'
-            if (f.score.fullTime.home !== null) patch.home_score = f.score.fullTime.home
-            if (f.score.fullTime.away !== null) patch.away_score = f.score.fullTime.away
-          }
-          await adminClient.from('matches').update(patch).eq('id', existing.id)
+          await adminClient.from('matches').update({
+            ...(needsTeamUpdate ? { home_team: home, away_team: away } : undefined),
+            ...(nowFinished ? {
+              status: 'finished' as const,
+              home_score: f.score.fullTime.home,
+              away_score: f.score.fullTime.away,
+            } : undefined),
+            updated_at: new Date().toISOString(),
+          }).eq('id', existing.id)
           fixturesUpdated++
         }
         continue
       }
 
-      const row: Record<string, unknown> = {
+      const { error } = await adminClient.from('matches').insert({
         stage: dbStage,
         home_team: home,
         away_team: away,
@@ -119,12 +120,10 @@ export async function runSync(): Promise<SyncResult> {
         status: fdStatusToDb(f.status),
         api_match_id: f.id,
         match_number: matchNumBase + i,
+        home_score: f.score.fullTime.home,
+        away_score: f.score.fullTime.away,
         updated_at: new Date().toISOString(),
-      }
-      if (f.score.fullTime.home !== null) row.home_score = f.score.fullTime.home
-      if (f.score.fullTime.away !== null) row.away_score = f.score.fullTime.away
-
-      const { error } = await adminClient.from('matches').insert(row)
+      })
       if (!error) fixturesInserted++
     }
   }
