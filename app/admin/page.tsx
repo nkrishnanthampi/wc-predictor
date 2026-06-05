@@ -61,21 +61,6 @@ export default async function AdminPage() {
       </div>
 
       <div className="space-y-4">
-        {/* Compare fixtures */}
-        <Card>
-          <CardHeader className="flex items-center gap-2">
-            <GitCompare className="h-5 w-5 text-purple-600" />
-            <h2 className="font-semibold text-gray-900">Compare Fixtures</h2>
-          </CardHeader>
-          <CardBody>
-            <p className="text-sm text-gray-600 mb-4">
-              Compare the current matches table against football-data.org. Shows missing fixtures,
-              orphaned DB rows, and field-level differences. Read-only — makes no changes.
-            </p>
-            <CompareFixturesPanel />
-          </CardBody>
-        </Card>
-
         {/* Leagues link */}
         <Card>
           <CardBody className="flex items-center justify-between">
@@ -105,6 +90,22 @@ export default async function AdminPage() {
           </CardBody>
         </Card>
 
+        {/* Sync results */}
+        <Card>
+          <CardHeader className="flex items-center gap-2">
+            <CheckSquare className="h-5 w-5 text-green-600" />
+            <h2 className="font-semibold text-gray-900">Sync Results & Score Predictions</h2>
+          </CardHeader>
+          <CardBody>
+            <p className="text-sm text-gray-600 mb-4">
+              Pulls all WC fixtures from football-data.org. Adds confirmed knockout fixtures to the
+              database, updates any that now have real teams, and scores predictions for finished matches.
+              Run after each match day and after each knockout round concludes.
+            </p>
+            <SyncResultsButton />
+          </CardBody>
+        </Card>
+
         {/* Effective date */}
         <Card>
           <CardHeader className="flex items-center gap-2">
@@ -120,19 +121,18 @@ export default async function AdminPage() {
           </CardBody>
         </Card>
 
-        {/* Sync results */}
+        {/* Compare fixtures */}
         <Card>
           <CardHeader className="flex items-center gap-2">
-            <CheckSquare className="h-5 w-5 text-green-600" />
-            <h2 className="font-semibold text-gray-900">Sync Results & Score Predictions</h2>
+            <GitCompare className="h-5 w-5 text-purple-600" />
+            <h2 className="font-semibold text-gray-900">Compare Fixtures</h2>
           </CardHeader>
           <CardBody>
             <p className="text-sm text-gray-600 mb-4">
-              Pulls all WC fixtures from football-data.org. Adds confirmed knockout fixtures to the
-              database, updates any that now have real teams, and scores predictions for finished matches.
-              Run after each match day and after each knockout round concludes.
+              Compare the current matches table against football-data.org. Shows missing fixtures,
+              orphaned DB rows, and field-level differences. Read-only — makes no changes.
             </p>
-            <SyncResultsButton />
+            <CompareFixturesPanel />
           </CardBody>
         </Card>
       </div>
