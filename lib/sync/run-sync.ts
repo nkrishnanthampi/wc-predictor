@@ -68,7 +68,7 @@ export async function runSync(): Promise<SyncResult> {
     .from('matches')
     .select('id, api_match_id, home_team, away_team, status')
     .is('generated_for_user_id', null)
-    .in('stage', Object.values(KNOCKOUT_STAGE_MAP))
+    .in('stage', Object.values(KNOCKOUT_STAGE_MAP) as MatchStage[])
 
   const existingByApiId = new Map((existingKnockout ?? []).map(r => [r.api_match_id, r]))
 
