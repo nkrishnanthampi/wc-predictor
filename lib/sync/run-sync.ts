@@ -14,7 +14,7 @@ interface FdMatch {
   score: { fullTime: { home: number | null; away: number | null } }
 }
 
-const KNOCKOUT_STAGE_MAP: Record<string, string> = {
+const KNOCKOUT_STAGE_MAP: Record<string, MatchStage> = {
   ROUND_OF_32:          'round_of_32',
   ROUND_OF_16:          'round_of_16',
   QUARTER_FINALS:       'quarter_final',
@@ -68,7 +68,7 @@ export async function runSync(): Promise<SyncResult> {
     .from('matches')
     .select('id, api_match_id, home_team, away_team, status')
     .is('generated_for_user_id', null)
-    .in('stage', Object.values(KNOCKOUT_STAGE_MAP) as MatchStage[])
+    .in('stage', Object.values(KNOCKOUT_STAGE_MAP))
 
   const existingByApiId = new Map((existingKnockout ?? []).map(r => [r.api_match_id, r]))
 
