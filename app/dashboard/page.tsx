@@ -2,11 +2,13 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
-import { formatKickoff, STAGE_LABELS } from '@/lib/utils'
+import { formatKickoff, formatKickoffShort, matchResultLabel, STAGE_LABELS } from '@/lib/utils'
 import type { MatchStage } from '@/lib/supabase/types'
 import { getEffectiveDateISO } from '@/lib/effective-date'
-import { Trophy } from 'lucide-react'
+import { cookies } from 'next/headers'
+import { Trophy, CheckCircle, CircleDot } from 'lucide-react'
 import { LeagueSelector } from '@/components/home/LeagueSelector'
+import { CollapsibleStage } from '@/components/knockout/CollapsibleStage'
 import clsx from 'clsx'
 
 export default async function DashboardPage({
@@ -92,8 +94,12 @@ export default async function DashboardPage({
   const defaultLeagueId = [...leagueIds].sort(
     (a, b) => (memberCounts[b] ?? 0) - (memberCounts[a] ?? 0)
   )[0]
+  const cookieStore = await cookies()
+  const cookieLeague = cookieStore.get('preferred_league_id')?.value
   const selectedLeagueId =
-    leagueParam && leagueIds.includes(leagueParam) ? leagueParam : defaultLeagueId
+    leagueParam && leagueIds.includes(leagueParam) ? leagueParam
+    : cookieLeague && leagueIds.includes(cookieLeague) ? cookieLeague
+    : defaultLeagueId
 
   // Leaderboard for selected league
   const { data: leaderboard } = selectedLeagueId
@@ -209,39 +215,37 @@ export default async function DashboardPage({
               </div>
             ) : (
               <>
-                {leaderboard?.map((row, idx) => (
-                  <div
-                    key={row.user_id}
-                    className={clsx(
-                      'flex items-center gap-3 px-5 py-3 border-b border-gray-50 last:border-0',
-                      row.user_id === user.id && 'bg-green-50'
-                    )}
-                  >
-                    <span className={clsx(
-                      'w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold shrink-0',
-                      idx === 0 && 'bg-yellow-100 text-yellow-700',
-                      idx === 1 && 'bg-gray-100 text-gray-600',
-                      idx === 2 && 'bg-orange-100 text-orange-700',
-                      idx > 2 && 'text-gray-400'
-                    )}>
-                      {idx + 1}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                <div className="max-h-80 overflow-y-auto">
+                  {leaderboard?.map((row, idx) => (
+                    <div
+                      key={row.user_id}
+                      className={clsx(
+                        'flex items-center gap-2 px-4 py-1.5 border-b border-gray-50 last:border-0',
+                        row.user_id === user.id && 'bg-green-50'
+                      )}
+                    >
+                      <span className={clsx(
+                        'w-5 shrink-0 text-center text-xs font-bold',
+                        idx === 0 && 'text-yellow-500',
+                        idx === 1 && 'text-gray-400',
+                        idx === 2 && 'text-orange-400',
+                        idx > 2 && 'text-gray-300'
+                      )}>
+                        {idx + 1}
+                      </span>
+                      <p className="flex-1 min-w-0 text-sm text-gray-900 truncate">
                         {row.display_name}
                         {row.user_id === user.id && (
                           <span className="ml-1 text-xs text-green-600">(you)</span>
                         )}
                       </p>
-                      <p className="text-xs text-gray-400">
-                        {row.predictions_scored}/{row.total_predictions} scored
-                      </p>
+                      <span className="shrink-0 text-sm font-bold text-gray-900">
+                        {row.total_points}
+                        <span className="text-xs font-normal text-gray-400 ml-0.5">pts</span>
+                      </span>
                     </div>
-                    <span className="text-lg font-bold text-gray-900 shrink-0">
-                      {row.total_points} pts
-                    </span>
-                  </div>
-                ))}
+                  ))}
+                </div>
                 {!leaderboard?.length && (
                   <p className="px-5 py-4 text-sm text-gray-500">
                     No predictions scored yet. Check back after matches start!
@@ -254,49 +258,95 @@ export default async function DashboardPage({
       </div>
 
       {knockoutPredictions.length > 0 && (
-        <Card className="mt-6">
-          <CardHeader>
-            <h2 className="font-semibold text-gray-900">My Knockout Predictions</h2>
-          </CardHeader>
-          <CardBody className="p-0">
-            {knockoutPredictions.map((p, idx) => {
-              const m = p.matches
-              const finished = m.status === 'finished'
-              return (
-                <Link
-                  key={`${m.id}-${idx}`}
-                  href={`/knockout`}
-                  className="flex items-center gap-3 px-5 py-3 border-b border-gray-50 hover:bg-gray-50 last:border-0 transition-colors"
-                >
-                  <span className="text-xs font-medium text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full shrink-0">
-                    {STAGE_LABELS[m.stage as MatchStage] ?? m.stage}
-                  </span>
-                  <p className="text-sm font-medium text-gray-900 flex-1 min-w-0 truncate">
-                    {m.home_team ?? 'TBD'} vs {m.away_team ?? 'TBD'}
-                  </p>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium">
-                      {p.predicted_home_score} – {p.predicted_away_score}
-                    </span>
-                    {finished && m.home_score !== null && m.away_score !== null && (
-                      <span className="text-xs text-gray-400">
-                        ({m.home_score}–{m.away_score})
-                      </span>
-                    )}
-                    {p.points_awarded !== null ? (
-                      <span className={clsx(
-                        'text-xs font-bold px-2 py-0.5 rounded-full',
-                        p.points_awarded > 0 ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-400'
-                      )}>
-                        {p.points_awarded} pts
-                      </span>
-                    ) : null}
-                  </div>
-                </Link>
-              )
-            })}
-          </CardBody>
-        </Card>
+        <div className="mt-6">
+          <h2 className="font-semibold text-gray-900 mb-3">My Knockout Predictions</h2>
+          {(['round_of_32', 'round_of_16', 'quarter_final', 'semi_final', 'final'] as MatchStage[]).map(stage => {
+            const stagePreds = knockoutPredictions.filter(p => p.matches.stage === stage)
+            if (stagePreds.length === 0) return null
+
+            const finishedCount = stagePreds.filter(p => p.matches.status === 'finished').length
+            const upcomingCount = stagePreds.length - finishedCount
+            const isCompleted = finishedCount === stagePreds.length
+
+            const meta = (
+              <>
+                {upcomingCount > 0 && <span>{upcomingCount} upcoming</span>}
+                {finishedCount > 0 && <span>{finishedCount} finished</span>}
+              </>
+            )
+
+            const badges = isCompleted ? (
+              <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">complete</span>
+            ) : null
+
+            return (
+              <CollapsibleStage
+                key={stage}
+                title={STAGE_LABELS[stage]}
+                defaultOpen={!isCompleted}
+                badges={badges}
+                meta={meta}
+              >
+                <div className="divide-y divide-gray-100">
+                  {stagePreds.map((p, idx) => {
+                    const m = p.matches
+                    const finished = m.status === 'finished'
+                    return (
+                      <Link
+                        key={`${m.id}-${idx}`}
+                        href={`/matches/${m.id}`}
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="shrink-0">
+                          {finished
+                            ? <CheckCircle className="h-5 w-5 text-green-500" />
+                            : <CircleDot className="h-5 w-5 text-blue-500" />
+                          }
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
+                            <span className="truncate">{m.home_team ?? 'TBD'}</span>
+                            <span className="text-gray-400 shrink-0">
+                              {finished ? matchResultLabel(m.home_score, m.away_score) : 'vs'}
+                            </span>
+                            <span className="truncate">{m.away_team ?? 'TBD'}</span>
+                          </div>
+                          <p className="text-xs text-gray-400 mt-0.5">{formatKickoffShort(m.kickoff_time)}</p>
+                          <div className="flex items-center gap-3 mt-1.5 text-xs">
+                            <span>
+                              <span className="text-gray-400">Result </span>
+                              <span className="font-semibold text-gray-700">
+                                {finished ? matchResultLabel(m.home_score, m.away_score) : 'TBC'}
+                              </span>
+                            </span>
+                            <span className="text-gray-300">·</span>
+                            <span>
+                              <span className="text-gray-400">Pick </span>
+                              <span className="font-semibold text-gray-700">
+                                {p.predicted_home_score} – {p.predicted_away_score}
+                              </span>
+                            </span>
+                            {p.points_awarded !== null && (
+                              <>
+                                <span className="text-gray-300">·</span>
+                                <span className={clsx(
+                                  'font-bold',
+                                  p.points_awarded > 0 ? 'text-green-600' : 'text-gray-400'
+                                )}>
+                                  {p.points_awarded > 0 ? `+${p.points_awarded} pts` : '0 pts'}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </CollapsibleStage>
+            )
+          })}
+        </div>
       )}
     </div>
   )

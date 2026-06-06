@@ -4,10 +4,13 @@ import Link from 'next/link'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { SyncResultsButton } from '@/components/admin/SyncResultsButton'
+import { ScoreFinishedMatchesButton } from '@/components/admin/ScoreFinishedMatchesButton'
+import { SeedKnockoutFixturesButton } from '@/components/admin/SeedKnockoutFixturesButton'
+import { TestPackControls } from '@/components/admin/TestPackControls'
 import { EffectiveDateForm } from '@/components/admin/EffectiveDateForm'
 import { CompareFixturesPanel } from '@/components/admin/CompareFixturesPanel'
 import { getRawEffectiveDate } from '@/lib/effective-date'
-import { Shield, CheckSquare, Clock, Users, GitCompare } from 'lucide-react'
+import { Shield, CheckSquare, Clock, Users, GitCompare, GitBranch, FlaskConical } from 'lucide-react'
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -102,24 +105,62 @@ export default async function AdminPage() {
               database, updates any that now have real teams, and scores predictions for finished matches.
               Run after each match day and after each knockout round concludes.
             </p>
-            <SyncResultsButton />
+            <div className="flex flex-wrap gap-3">
+              <SyncResultsButton />
+              <ScoreFinishedMatchesButton />
+            </div>
           </CardBody>
         </Card>
 
-        {/* Effective date */}
-        <Card>
-          <CardHeader className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-amber-600" />
-            <h2 className="font-semibold text-gray-900">Simulate Effective Date</h2>
-          </CardHeader>
-          <CardBody>
-            <p className="text-sm text-gray-600 mb-4">
-              Override the current date used across the app. Useful for testing how the dashboard
-              and match pages look once the tournament is underway. Clear to return to real time.
-            </p>
-            <EffectiveDateForm currentValue={effectiveDateRaw} />
-          </CardBody>
-        </Card>
+        {process.env.NODE_ENV === 'development' && (
+          <>
+            {/* Test pack */}
+            <Card>
+              <CardHeader className="flex items-center gap-2">
+                <FlaskConical className="h-5 w-5 text-rose-600" />
+                <h2 className="font-semibold text-gray-900">Test Pack</h2>
+              </CardHeader>
+              <CardBody>
+                <p className="text-sm text-gray-600 mb-4">
+                  Creates 100 test users in "Test League 2026". Simulate each round in order —
+                  each step seeds fixtures, generates random predictions, sets random scores, and
+                  calculates points. Select "Test League 2026" on the dashboard to watch the leaderboard change.
+                </p>
+                <TestPackControls />
+              </CardBody>
+            </Card>
+
+            {/* Seed knockout fixtures */}
+            <Card>
+              <CardHeader className="flex items-center gap-2">
+                <GitBranch className="h-5 w-5 text-indigo-600" />
+                <h2 className="font-semibold text-gray-900">Seed Knockout Fixtures</h2>
+              </CardHeader>
+              <CardBody>
+                <p className="text-sm text-gray-600 mb-4">
+                  Seeds the next knockout round as real shared fixtures based on current DB results —
+                  bypasses the football-data.org API. Run after scoring each round: group → R32 → R16 → QF → SF → Final.
+                </p>
+                <SeedKnockoutFixturesButton />
+              </CardBody>
+            </Card>
+
+            {/* Effective date */}
+            <Card>
+              <CardHeader className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-amber-600" />
+                <h2 className="font-semibold text-gray-900">Simulate Effective Date</h2>
+              </CardHeader>
+              <CardBody>
+                <p className="text-sm text-gray-600 mb-4">
+                  Override the current date used across the app. Useful for testing how the dashboard
+                  and match pages look once the tournament is underway. Clear to return to real time.
+                </p>
+                <EffectiveDateForm currentValue={effectiveDateRaw} />
+              </CardBody>
+            </Card>
+          </>
+        )}
 
         {/* Compare fixtures */}
         <Card>

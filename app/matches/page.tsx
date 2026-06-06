@@ -1,12 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Card, CardBody } from '@/components/ui/Card'
 import { formatKickoffShort, isPredictionLocked, matchResultLabel } from '@/lib/utils'
 import { getEffectiveDate } from '@/lib/effective-date'
 import { Lock, CheckCircle, Circle, CircleDot } from 'lucide-react'
 import clsx from 'clsx'
 import { MatchListScroll } from '@/components/matches/MatchListScroll'
+import { CollapsibleStage } from '@/components/knockout/CollapsibleStage'
 
 export default async function GroupMatchesPage() {
   const supabase = await createClient()
@@ -17,7 +17,7 @@ export default async function GroupMatchesPage() {
     .from('matches')
     .select('*')
     .eq('stage', 'group')
-    .order('kickoff_time', { ascending: true })
+    .order('match_number', { ascending: true })
 
   const { data: myPredictions } = await supabase
     .from('predictions')
@@ -27,15 +27,23 @@ export default async function GroupMatchesPage() {
   const predMap = new Map(myPredictions?.map(p => [p.match_id, p]) ?? [])
   const asOf = await getEffectiveDate()
 
-  const finished: typeof matches = []
-  const upcoming: typeof matches = []
-
-  for (const match of matches ?? []) {
-    if (match.status === 'finished') finished.push(match)
-    else upcoming.push(match)
-  }
-
   type Match = NonNullable<typeof matches>[number]
+
+  // Group matches by group letter, preserving A–L order
+  const groups = new Map<string, Match[]>()
+  for (const m of matches ?? []) {
+    const g = m.group_name ?? '?'
+    if (!groups.has(g)) groups.set(g, [])
+    groups.get(g)!.push(m)
+  }
+  const sortedGroups = [...groups.entries()].sort(([a], [b]) => a.localeCompare(b))
+
+  function cardBg(isFinished: boolean, points: number | null | undefined): string {
+    if (!isFinished || points === null || points === undefined) return 'bg-white'
+    if (points >= 2) return 'bg-green-50'
+    if (points === 1) return 'bg-amber-50'
+    return 'bg-red-50'
+  }
 
   function renderMatchCard(match: Match) {
     const pred = predMap.get(match.id)
@@ -44,11 +52,12 @@ export default async function GroupMatchesPage() {
 
     return (
       <Link key={match.id} href={`/matches/${match.id}`}>
-        <Card className={clsx(
-          'hover:shadow-md transition-shadow cursor-pointer',
-          !isFinished && locked && !pred && 'opacity-60'
+        <div className={clsx(
+          'rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer',
+          cardBg(isFinished, pred?.points_awarded),
+          !isFinished && locked && !pred && 'opacity-60',
         )}>
-          <CardBody className="py-3">
+          <div className="px-5 py-3">
             <div className="flex items-center gap-3">
               <div className="shrink-0">
                 {isFinished ? (
@@ -72,7 +81,6 @@ export default async function GroupMatchesPage() {
                 </div>
                 <p className="text-xs text-gray-400 mt-0.5">
                   {formatKickoffShort(match.kickoff_time)}
-                  {match.group_name && ` · Group ${match.group_name}`}
                 </p>
 
                 {(isFinished || pred) && (
@@ -94,18 +102,14 @@ export default async function GroupMatchesPage() {
                         <span className="font-semibold text-gray-400">0 – 0 (assumed)</span>
                       )}
                     </span>
-                    {isFinished && (
+                    {isFinished && pred?.points_awarded !== null && pred?.points_awarded !== undefined && (
                       <>
                         <span className="text-gray-300">·</span>
                         <span className={clsx(
                           'font-bold',
-                          pred?.points_awarded != null && pred.points_awarded > 0
-                            ? 'text-green-600'
-                            : 'text-gray-400'
+                          pred.points_awarded > 0 ? 'text-green-600' : 'text-gray-400',
                         )}>
-                          {pred?.points_awarded != null
-                            ? pred.points_awarded > 0 ? `+${pred.points_awarded} pts` : '0 pts'
-                            : '0 pts'}
+                          {pred.points_awarded > 0 ? `+${pred.points_awarded} pts` : '0 pts'}
                         </span>
                       </>
                     )}
@@ -117,13 +121,12 @@ export default async function GroupMatchesPage() {
                 <span className="shrink-0 text-xs font-medium">
                   {locked
                     ? <span className="text-gray-400">Not predicted</span>
-                    : <span className="text-green-600">Predict →</span>
-                  }
+                    : <span className="text-green-600">Predict →</span>}
                 </span>
               )}
             </div>
-          </CardBody>
-        </Card>
+          </div>
+        </div>
       </Link>
     )
   }
@@ -133,35 +136,62 @@ export default async function GroupMatchesPage() {
       <div className="max-w-4xl mx-auto px-4 py-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Group Matches</h1>
 
-        <div className="space-y-1">
-          {finished.length > 0 && (
-            <details>
-              <summary className="cursor-pointer select-none text-sm font-semibold text-gray-500 uppercase tracking-wider py-1">
-                Finished ({finished.length})
-              </summary>
-              <div className="mt-2 space-y-2">
-                {finished.map(match => renderMatchCard(match))}
-              </div>
-            </details>
-          )}
-
-          {upcoming.length > 0 && (
-            <details open>
-              <summary className="cursor-pointer select-none text-sm font-semibold text-gray-500 uppercase tracking-wider py-1">
-                Upcoming ({upcoming.length})
-              </summary>
-              <div className="mt-2 space-y-2">
-                {upcoming.map(match => renderMatchCard(match))}
-              </div>
-            </details>
-          )}
-        </div>
-
-        {!matches?.length && (
+        {sortedGroups.length === 0 && (
           <div className="text-center py-16 text-gray-500">
             <p>No fixtures loaded yet. Check back soon or ask the admin to sync fixtures.</p>
           </div>
         )}
+
+        {sortedGroups.map(([letter, groupMatches]) => {
+          const finished = groupMatches.filter(m => m.status === 'finished')
+          const upcoming = groupMatches.filter(m => m.status !== 'finished')
+          const isCompleted = finished.length === groupMatches.length && groupMatches.length > 0
+          const hasBoth = upcoming.length > 0 && finished.length > 0
+
+          const badges = isCompleted ? (
+            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">complete</span>
+          ) : null
+
+          const meta = (
+            <>
+              {upcoming.length > 0 && <span>{upcoming.length} upcoming</span>}
+              {finished.length > 0 && <span>{finished.length} finished</span>}
+            </>
+          )
+
+          return (
+            <CollapsibleStage
+              key={letter}
+              title={`Group ${letter}`}
+              defaultOpen={!isCompleted}
+              badges={badges}
+              meta={meta}
+            >
+              <div className="divide-y divide-gray-100">
+                {upcoming.length > 0 && (
+                  <div className="px-4 py-3">
+                    {hasBoth && (
+                      <p className="mb-2 text-xs font-medium uppercase tracking-wider text-gray-400">Upcoming</p>
+                    )}
+                    <div className="space-y-2">
+                      {upcoming.map(m => renderMatchCard(m))}
+                    </div>
+                  </div>
+                )}
+                {finished.length > 0 && (
+                  <div className="px-4 py-3">
+                    {hasBoth && (
+                      <p className="mb-2 text-xs font-medium uppercase tracking-wider text-gray-400">Finished</p>
+                    )}
+                    <div className="space-y-2">
+                      {finished.map(m => renderMatchCard(m))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CollapsibleStage>
+          )
+        })}
       </div>
     </MatchListScroll>
   )

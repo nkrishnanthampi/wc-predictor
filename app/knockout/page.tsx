@@ -5,9 +5,10 @@ import { Card, CardBody } from '@/components/ui/Card'
 import { formatKickoffShort, isPredictionLocked, STAGE_LABELS, matchResultLabel } from '@/lib/utils'
 import { getEffectiveDate } from '@/lib/effective-date'
 import type { Match, MatchStage } from '@/lib/supabase/types'
-import { Lock, CheckCircle, Circle, CircleDot, ChevronDown } from 'lucide-react'
+import { Lock, CheckCircle, Circle, CircleDot } from 'lucide-react'
 import clsx from 'clsx'
 import { MatchListScroll } from '@/components/matches/MatchListScroll'
+import { CollapsibleStage } from '@/components/knockout/CollapsibleStage'
 import {
   computeGroupStandings,
   buildR32Pairs,
@@ -260,31 +261,32 @@ export default async function KnockoutMatchesPage() {
     const isCompleted = upcoming.length === 0 && finished.length > 0
     const hasBoth = upcoming.length > 0 && finished.length > 0
 
-    return (
-      <details key={stage} open={!isCompleted} className="group mb-3 rounded-lg border border-gray-200 overflow-hidden">
-        <summary className="flex cursor-pointer select-none list-none items-center justify-between bg-gray-50 px-4 py-3 hover:bg-gray-100 transition-colors [&::-webkit-details-marker]:hidden">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
-              {STAGE_LABELS[stage]}
-            </h2>
-            {isGenerated && (
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">predicted</span>
-            )}
-            {isCompleted && (
-              <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">complete</span>
-            )}
-          </div>
-          <div className="flex items-center gap-3 text-xs text-gray-400">
-            {upcoming.length > 0 && (
-              <span>{upcoming.length} upcoming</span>
-            )}
-            {finished.length > 0 && (
-              <span>{finished.length} finished</span>
-            )}
-            <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-open:rotate-180" />
-          </div>
-        </summary>
+    const badges = (
+      <>
+        {isGenerated && (
+          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">predicted</span>
+        )}
+        {isCompleted && (
+          <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">complete</span>
+        )}
+      </>
+    )
 
+    const meta = (
+      <>
+        {upcoming.length > 0 && <span>{upcoming.length} upcoming</span>}
+        {finished.length > 0 && <span>{finished.length} finished</span>}
+      </>
+    )
+
+    return (
+      <CollapsibleStage
+        key={stage}
+        title={STAGE_LABELS[stage]}
+        defaultOpen={!isCompleted}
+        badges={badges}
+        meta={meta}
+      >
         <div className="divide-y divide-gray-100">
           {upcoming.length > 0 && (
             <div className="px-4 py-3">
@@ -307,7 +309,7 @@ export default async function KnockoutMatchesPage() {
             </div>
           )}
         </div>
-      </details>
+      </CollapsibleStage>
     )
   }
 
