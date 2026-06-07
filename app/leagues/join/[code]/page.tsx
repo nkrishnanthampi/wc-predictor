@@ -32,5 +32,5 @@ export default async function JoinLeaguePage({ params }: { params: Promise<{ cod
     await supabase.from('league_members').insert({ league_id: league.id, user_id: user.id })
   }
 
-  redirect(`/leagues/${league.id}`)
+  redirect('/dashboard')
 }
