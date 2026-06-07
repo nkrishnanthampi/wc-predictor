@@ -9,6 +9,7 @@ import { cookies } from 'next/headers'
 import { Trophy, CheckCircle, CircleDot } from 'lucide-react'
 import { LeagueSelector } from '@/components/home/LeagueSelector'
 import { WatchOn } from '@/components/matches/WatchOn'
+import { SetWelcomedCookie } from '@/components/SetWelcomedCookie'
 import { CollapsibleStage } from '@/components/knockout/CollapsibleStage'
 import clsx from 'clsx'
 
@@ -96,6 +97,7 @@ export default async function DashboardPage({
     (a, b) => (memberCounts[b] ?? 0) - (memberCounts[a] ?? 0)
   )[0]
   const cookieStore = await cookies()
+  const hasVisited = cookieStore.has('wcp_welcomed')
   const cookieLeague = cookieStore.get('preferred_league_id')?.value
   const selectedLeagueId =
     leagueParam && leagueIds.includes(leagueParam) ? leagueParam
@@ -149,8 +151,9 @@ export default async function DashboardPage({
     <div className="max-w-6xl mx-auto px-4 py-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">
-          Welcome back, {profile.data?.display_name ?? 'Player'} 👋
+          {hasVisited ? 'Welcome back,' : 'Welcome'} {profile.data?.display_name ?? 'Player'} 👋
         </h1>
+        {!hasVisited && <SetWelcomedCookie />}
         <p className="text-gray-500 text-sm mt-1">FIFA World Cup 2026</p>
       </div>
 
