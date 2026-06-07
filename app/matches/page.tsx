@@ -7,6 +7,7 @@ import { Lock, CheckCircle, Circle, CircleDot } from 'lucide-react'
 import clsx from 'clsx'
 import { MatchListScroll } from '@/components/matches/MatchListScroll'
 import { CollapsibleStage } from '@/components/knockout/CollapsibleStage'
+import { WatchOn } from '@/components/matches/WatchOn'
 
 export default async function GroupMatchesPage() {
   const supabase = await createClient()
@@ -82,6 +83,7 @@ export default async function GroupMatchesPage() {
                 <p className="text-xs text-gray-400 mt-0.5">
                   {formatKickoffShort(match.kickoff_time)}
                 </p>
+                <WatchOn />
 
                 {(isFinished || pred) && (
                   <div className="flex items-center gap-3 mt-1.5 text-xs">

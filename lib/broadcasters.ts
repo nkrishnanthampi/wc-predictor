@@ -1,0 +1,371 @@
+// 2026 FIFA World Cup broadcaster data, sourced from Wikipedia and FIFA official media rights list.
+// Ordered free-to-air first within each country.
+
+export interface Broadcaster {
+  name: string
+  free: boolean   // true = free-to-air / free streaming; false = subscription required
+}
+
+// IANA timezone → ISO 3166-1 alpha-2 country code
+const TIMEZONE_COUNTRY: Record<string, string> = {
+  // UK & Ireland
+  'Europe/London': 'GB',
+  'Europe/Dublin': 'IE',
+
+  // Western Europe
+  'Europe/Paris': 'FR',
+  'Europe/Berlin': 'DE',
+  'Europe/Amsterdam': 'NL',
+  'Europe/Brussels': 'BE',
+  'Europe/Luxembourg': 'LU',
+  'Europe/Madrid': 'ES',
+  'Europe/Lisbon': 'PT',
+  'Europe/Rome': 'IT',
+  'Europe/Vatican': 'IT',
+  'Europe/San_Marino': 'IT',
+  'Europe/Zurich': 'CH',
+  'Europe/Vienna': 'AT',
+  'Europe/Malta': 'MT',
+
+  // Northern Europe
+  'Europe/Stockholm': 'SE',
+  'Europe/Oslo': 'NO',
+  'Europe/Copenhagen': 'DK',
+  'Europe/Helsinki': 'FI',
+  'Europe/Tallinn': 'EE',
+  'Europe/Riga': 'LV',
+  'Europe/Vilnius': 'LT',
+  'Atlantic/Reykjavik': 'IS',
+  'Europe/Reykjavik': 'IS',
+
+  // Central & Eastern Europe
+  'Europe/Warsaw': 'PL',
+  'Europe/Budapest': 'HU',
+  'Europe/Prague': 'CZ',
+  'Europe/Bratislava': 'SK',
+  'Europe/Bucharest': 'RO',
+  'Europe/Sofia': 'BG',
+  'Europe/Athens': 'GR',
+  'Europe/Zagreb': 'HR',
+  'Europe/Ljubljana': 'SI',
+  'Europe/Belgrade': 'RS',
+  'Europe/Sarajevo': 'BA',
+  'Europe/Skopje': 'MK',
+  'Europe/Podgorica': 'ME',
+  'Europe/Tirane': 'AL',
+
+  // Other Europe
+  'Europe/Kyiv': 'UA',
+  'Europe/Kiev': 'UA',
+  'Europe/Istanbul': 'TR',
+  'Europe/Moscow': 'RU',
+  'Europe/Kaliningrad': 'RU',
+  'Europe/Samara': 'RU',
+  'Asia/Yekaterinburg': 'RU',
+  'Europe/Nicosia': 'CY',
+
+  // Americas — United States
+  'America/New_York': 'US',
+  'America/Chicago': 'US',
+  'America/Denver': 'US',
+  'America/Los_Angeles': 'US',
+  'America/Phoenix': 'US',
+  'America/Anchorage': 'US',
+  'Pacific/Honolulu': 'US',
+  'America/Indiana/Indianapolis': 'US',
+  'America/Kentucky/Louisville': 'US',
+  'America/Detroit': 'US',
+  'America/Boise': 'US',
+
+  // Americas — Canada
+  'America/Toronto': 'CA',
+  'America/Vancouver': 'CA',
+  'America/Winnipeg': 'CA',
+  'America/Edmonton': 'CA',
+  'America/Halifax': 'CA',
+  'America/St_Johns': 'CA',
+  'America/Regina': 'CA',
+
+  // Americas — Mexico
+  'America/Mexico_City': 'MX',
+  'America/Monterrey': 'MX',
+  'America/Tijuana': 'MX',
+  'America/Cancun': 'MX',
+  'America/Merida': 'MX',
+  'America/Hermosillo': 'MX',
+
+  // Americas — South America
+  'America/Sao_Paulo': 'BR',
+  'America/Manaus': 'BR',
+  'America/Belem': 'BR',
+  'America/Fortaleza': 'BR',
+  'America/Recife': 'BR',
+  'America/Porto_Velho': 'BR',
+  'America/Boa_Vista': 'BR',
+  'America/Cuiaba': 'BR',
+  'America/Maceio': 'BR',
+  'America/Argentina/Buenos_Aires': 'AR',
+  'America/Argentina/Cordoba': 'AR',
+  'America/Argentina/Mendoza': 'AR',
+  'America/Argentina/Tucuman': 'AR',
+  'America/Bogota': 'CO',
+  'America/Lima': 'PE',
+  'America/Santiago': 'CL',
+  'America/Caracas': 'VE',
+  'America/La_Paz': 'BO',
+  'America/Asuncion': 'PY',
+  'America/Montevideo': 'UY',
+  'America/Guayaquil': 'EC',
+  'America/Paramaribo': 'SR',
+  'America/Guyana': 'GY',
+
+  // Americas — Central America & Caribbean
+  'America/Tegucigalpa': 'HN',
+  'America/Guatemala': 'GT',
+  'America/El_Salvador': 'SV',
+  'America/Managua': 'NI',
+  'America/Costa_Rica': 'CR',
+  'America/Panama': 'PA',
+  'America/Santo_Domingo': 'DO',
+  'America/Port-au-Prince': 'HT',
+  'America/Kingston': 'JM',
+  'America/Barbados': 'BB',
+
+  // Africa
+  'Africa/Lagos': 'NG',
+  'Africa/Nairobi': 'KE',
+  'Africa/Johannesburg': 'ZA',
+  'Africa/Accra': 'GH',
+  'Africa/Casablanca': 'MA',
+  'Africa/Algiers': 'DZ',
+  'Africa/Cairo': 'EG',
+  'Africa/Dakar': 'SN',
+  'Africa/Dar_es_Salaam': 'TZ',
+  'Africa/Kampala': 'UG',
+  'Africa/Kigali': 'RW',
+  'Africa/Harare': 'ZW',
+  'Africa/Maputo': 'MZ',
+  'Africa/Lusaka': 'ZM',
+  'Africa/Tunis': 'TN',
+  'Africa/Addis_Ababa': 'ET',
+  'Africa/Luanda': 'AO',
+  'Africa/Abidjan': 'CI',
+  'Africa/Cotonou': 'BJ',
+  'Africa/Bamako': 'ML',
+  'Africa/Lome': 'TG',
+  'Africa/Douala': 'CM',
+  'Africa/Libreville': 'GA',
+  'Africa/Brazzaville': 'CG',
+  'Africa/Kinshasa': 'CD',
+  'Africa/Malabo': 'GQ',
+  'Africa/Bangui': 'CF',
+  'Africa/Ndjamena': 'TD',
+  'Africa/Khartoum': 'SD',
+  'Africa/Tripoli': 'LY',
+
+  // Asia — South Asia
+  'Asia/Kolkata': 'IN',
+  'Asia/Calcutta': 'IN',
+  'Asia/Dhaka': 'BD',
+  'Asia/Karachi': 'PK',
+  'Asia/Colombo': 'LK',
+  'Asia/Kathmandu': 'NP',
+  'Asia/Kabul': 'AF',
+
+  // Asia — East Asia
+  'Asia/Tokyo': 'JP',
+  'Asia/Shanghai': 'CN',
+  'Asia/Chongqing': 'CN',
+  'Asia/Harbin': 'CN',
+  'Asia/Urumqi': 'CN',
+  'Asia/Hong_Kong': 'HK',
+  'Asia/Seoul': 'KR',
+  'Asia/Taipei': 'TW',
+  'Asia/Macau': 'MO',
+  'Asia/Ulaanbaatar': 'MN',
+
+  // Asia — Southeast Asia
+  'Asia/Singapore': 'SG',
+  'Asia/Kuala_Lumpur': 'MY',
+  'Asia/Jakarta': 'ID',
+  'Asia/Makassar': 'ID',
+  'Asia/Jayapura': 'ID',
+  'Asia/Manila': 'PH',
+  'Asia/Bangkok': 'TH',
+  'Asia/Ho_Chi_Minh': 'VN',
+  'Asia/Hanoi': 'VN',
+  'Asia/Phnom_Penh': 'KH',
+  'Asia/Vientiane': 'LA',
+  'Asia/Rangoon': 'MM',
+  'Asia/Yangon': 'MM',
+  'Asia/Brunei': 'BN',
+  'Asia/Dili': 'TL',
+
+  // Asia — Central Asia
+  'Asia/Almaty': 'KZ',
+  'Asia/Tashkent': 'UZ',
+  'Asia/Dushanbe': 'TJ',
+  'Asia/Bishkek': 'KG',
+  'Asia/Ashgabat': 'TM',
+
+  // Asia — West Asia / Middle East
+  'Asia/Baku': 'AZ',
+  'Asia/Tbilisi': 'GE',
+  'Asia/Yerevan': 'AM',
+  'Asia/Jerusalem': 'IL',
+  'Asia/Tel_Aviv': 'IL',
+
+  // Oceania
+  'Australia/Sydney': 'AU',
+  'Australia/Melbourne': 'AU',
+  'Australia/Brisbane': 'AU',
+  'Australia/Perth': 'AU',
+  'Australia/Adelaide': 'AU',
+  'Australia/Darwin': 'AU',
+  'Australia/Hobart': 'AU',
+  'Pacific/Auckland': 'NZ',
+  'Pacific/Chatham': 'NZ',
+  'Pacific/Fiji': 'FJ',
+  'Pacific/Efate': 'VU',
+}
+
+// Country code → broadcasters (free-to-air listed first)
+const BROADCASTERS: Record<string, Broadcaster[]> = {
+  // Europe
+  GB: [{ name: 'BBC', free: true }, { name: 'ITV', free: true }],
+  IE: [{ name: 'RTÉ', free: true }],
+  FR: [{ name: 'M6', free: true }, { name: 'beIN Sports', free: false }],
+  DE: [{ name: 'ARD', free: true }, { name: 'ZDF', free: true }],
+  NL: [{ name: 'NOS', free: true }],
+  BE: [{ name: 'VRT', free: true }, { name: 'RTBF', free: true }],
+  LU: [{ name: 'RTBF', free: true }, { name: 'M6', free: true }, { name: 'ARD', free: true }],
+  ES: [{ name: 'RTVE', free: true }, { name: 'DAZN', free: false }],
+  PT: [{ name: 'RTP', free: true }, { name: 'SIC', free: true }, { name: 'TVI', free: true }],
+  IT: [{ name: 'RAI', free: true }, { name: 'DAZN', free: false }],
+  CH: [{ name: 'SRG SSR', free: true }],
+  AT: [{ name: 'ORF', free: true }, { name: 'ServusTV', free: true }],
+  MT: [{ name: 'Television Malta', free: true }],
+  SE: [{ name: 'SVT', free: true }, { name: 'TV4', free: true }],
+  NO: [{ name: 'NRK', free: true }, { name: 'TV2', free: true }],
+  DK: [{ name: 'DR', free: true }, { name: 'TV2', free: true }],
+  FI: [{ name: 'Yle', free: true }, { name: 'MTV3', free: true }],
+  IS: [{ name: 'RÚV', free: true }],
+  EE: [{ name: 'ERR', free: true }],
+  LV: [{ name: 'TV3 Latvia', free: false }],
+  LT: [{ name: 'TV3 Lithuania', free: false }],
+  PL: [{ name: 'TVP', free: true }],
+  HU: [{ name: 'MTVA', free: true }],
+  CZ: [{ name: 'ČT', free: true }, { name: 'TV Nova', free: true }],
+  SK: [{ name: 'RTVS', free: true }, { name: 'TV JOJ', free: true }],
+  RO: [{ name: 'Antena', free: true }],
+  BG: [{ name: 'BNT', free: true }],
+  GR: [{ name: 'ERT', free: true }],
+  HR: [{ name: 'HRT', free: true }],
+  SI: [{ name: 'RTV SLO', free: true }],
+  RS: [{ name: 'PTC', free: true }, { name: 'Arena Sport', free: false }],
+  UA: [{ name: 'MEGOGO', free: false }],
+  TR: [{ name: 'TRT', free: true }],
+  RU: [{ name: 'Match TV', free: true }],
+  CY: [{ name: 'Sigma TV', free: true }],
+
+  // Americas
+  US: [{ name: 'Fox Sports', free: false }, { name: 'Telemundo', free: false }],
+  CA: [{ name: 'Bell Media', free: false }],
+  MX: [{ name: 'TelevisaUnivision', free: true }, { name: 'TV Azteca', free: true }],
+  BR: [{ name: 'SBT', free: true }, { name: 'CazéTV', free: true }, { name: 'Globo', free: false }],
+  AR: [{ name: 'Telefe', free: true }, { name: 'TV Pública', free: true }, { name: 'TyC Sports', free: false }],
+  CO: [{ name: 'Caracol', free: true }, { name: 'RCN', free: true }],
+  PE: [{ name: 'América Televisión', free: true }],
+  CL: [{ name: 'Chilevisión', free: true }],
+  VE: [{ name: 'Televen', free: true }],
+  BO: [{ name: 'Red Uno', free: true }, { name: 'Unitel', free: true }],
+  PY: [{ name: 'Trece', free: true }, { name: 'GEN TV', free: true }],
+  UY: [{ name: 'Canal 5', free: true }, { name: 'Antel TV', free: true }],
+  EC: [{ name: 'Teleamazonas', free: true }],
+  HN: [{ name: 'Televicentro', free: true }],
+  GT: [{ name: 'Albavisión', free: true }],
+  SV: [{ name: 'TCS', free: true }],
+  NI: [{ name: 'Grupo Ratensa', free: true }],
+  CR: [{ name: 'Teletica', free: true }],
+  PA: [{ name: 'RPC/COS', free: true }, { name: 'TVN Media', free: true }],
+  DO: [{ name: 'CDN 37', free: true }],
+  HT: [{ name: 'TNH', free: true }],
+  JM: [{ name: 'TVJ', free: true }],
+  SR: [{ name: 'STVS', free: true }],
+  GY: [{ name: 'ENet', free: true }],
+
+  // Africa
+  NG: [{ name: 'StarTimes', free: false }],
+  KE: [{ name: 'KBC', free: true }, { name: 'Azam TV', free: false }],
+  ZA: [{ name: 'SABC', free: true }],
+  GH: [{ name: 'ChannelOne TV', free: true }],
+  MA: [{ name: 'SNRT', free: true }],
+  DZ: [{ name: 'ENTV', free: true }],
+  SN: [{ name: 'RTS', free: true }],
+  TZ: [{ name: 'Azam TV', free: false }],
+  UG: [{ name: 'UBC', free: true }, { name: 'Azam TV', free: false }],
+  RW: [{ name: 'Azam TV', free: false }],
+  ZW: [{ name: 'ZBC', free: true }],
+  MZ: [{ name: 'Miramar', free: true }],
+  ZM: [{ name: 'Azam TV', free: false }],
+  ET: [{ name: 'Hagerie TV', free: true }],
+  AO: [{ name: 'Z Sports', free: false }],
+  CI: [{ name: 'RTI', free: true }],
+  BJ: [{ name: 'Bénin TV', free: true }],
+
+  // Asia — South Asia
+  IN: [{ name: 'Unite8 Sports', free: false }, { name: 'ZEE5', free: false }],
+  BD: [{ name: 'BTV', free: true }, { name: 'T Sports', free: true }],
+  PK: [{ name: 'PTV Sports', free: true }],
+  LK: [{ name: 'SLTMobitel PEOTV', free: true }],
+  NP: [{ name: 'Himalaya Sports', free: true }],
+  AF: [{ name: 'ATN', free: true }],
+
+  // Asia — East Asia
+  JP: [{ name: 'NHK', free: true }, { name: 'Nippon TV', free: true }, { name: 'DAZN', free: false }],
+  CN: [{ name: 'CCTV', free: true }],
+  HK: [{ name: 'PCCW', free: false }],
+  KR: [{ name: 'JTBC', free: true }, { name: 'KBS', free: true }],
+  TW: [{ name: 'TTV', free: true }, { name: 'EBC', free: false }],
+  MN: [{ name: 'MNB', free: true }],
+  MO: [{ name: 'TDM', free: true }],
+
+  // Asia — Southeast Asia
+  SG: [{ name: 'Mediacorp', free: true }],
+  MY: [{ name: 'RTM', free: true }],
+  ID: [{ name: 'TVRI', free: true }],
+  PH: [{ name: 'Aleph Arena', free: true }],
+  VN: [{ name: 'VTV', free: true }],
+  KH: [{ name: 'Hang Meas', free: true }],
+  LA: [{ name: 'Unitel Laos', free: true }],
+  MM: [{ name: 'TV360 by Mytel', free: true }],
+  BN: [{ name: 'RTB', free: true }],
+  TL: [{ name: 'RTTL', free: true }],
+
+  // Asia — Central Asia
+  KZ: [{ name: 'QAZTRK', free: true }],
+  UZ: [{ name: "Zo'r TV", free: true }],
+  TJ: [{ name: 'Varzish TV', free: true }],
+  KG: [{ name: 'KTRK', free: true }],
+  TM: [{ name: 'Quest Sports Media', free: true }],
+
+  // Asia — West Asia
+  AZ: [{ name: 'İTV', free: true }, { name: 'CBC Sport', free: true }],
+  GE: [{ name: 'Rustavi 2', free: true }],
+  AM: [{ name: 'Fast Sports', free: true }],
+  IL: [{ name: 'KAN', free: true }],
+
+  // Oceania
+  AU: [{ name: 'SBS', free: true }],
+  NZ: [{ name: 'TVNZ', free: true }],
+  FJ: [{ name: 'FBC', free: true }],
+  VU: [{ name: 'VBTC', free: true }],
+}
+
+export function getBroadcastersForTimezone(timezone: string): Broadcaster[] | null {
+  const country = TIMEZONE_COUNTRY[timezone]
+  if (!country) return null
+  const channels = BROADCASTERS[country]
+  if (!channels || channels.length === 0) return null
+  return channels
+}

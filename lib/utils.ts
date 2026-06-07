@@ -1,14 +1,20 @@
 import { format, formatDistanceToNow } from 'date-fns'
 import type { MatchStage } from './supabase/types'
 
+function tzAbbr(d: Date): string {
+  return new Intl.DateTimeFormat('en', { timeZoneName: 'short' })
+    .formatToParts(d)
+    .find(p => p.type === 'timeZoneName')?.value ?? ''
+}
+
 export function formatKickoff(iso: string): string {
   const d = new Date(iso)
-  return format(d, 'EEE d MMM, HH:mm')
+  return `${format(d, 'EEE d MMM, HH:mm')} ${tzAbbr(d)}`
 }
 
 export function formatKickoffShort(iso: string): string {
   const d = new Date(iso)
-  return format(d, 'd MMM HH:mm')
+  return `${format(d, 'd MMM HH:mm')} ${tzAbbr(d)}`
 }
 
 export function kickoffRelative(iso: string): string {

@@ -8,6 +8,7 @@ import { getEffectiveDateISO } from '@/lib/effective-date'
 import { cookies } from 'next/headers'
 import { Trophy, CheckCircle, CircleDot } from 'lucide-react'
 import { LeagueSelector } from '@/components/home/LeagueSelector'
+import { WatchOn } from '@/components/matches/WatchOn'
 import { CollapsibleStage } from '@/components/knockout/CollapsibleStage'
 import clsx from 'clsx'
 
@@ -175,6 +176,7 @@ export default async function DashboardPage({
                     {match.home_team ?? 'TBD'} vs {match.away_team ?? 'TBD'}
                   </p>
                   <p className="text-xs text-gray-500">{formatKickoff(match.kickoff_time)}</p>
+                  <WatchOn />
                 </div>
                 {predictionByMatch[match.id] ? (
                   <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium">

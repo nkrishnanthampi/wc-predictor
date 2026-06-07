@@ -6,11 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from './Button'
 import { Mail } from 'lucide-react'
 
-export function LoginForm({
-  searchParams,
-}: {
-  searchParams: Promise<{ redirectTo?: string; message?: string }>
-}) {
+export function LoginForm({ redirectTo }: { redirectTo?: string }) {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [step, setStep] = useState<'email' | 'code'>('email')
@@ -55,7 +51,7 @@ export function LoginForm({
     if (error) {
       setError(error.message)
     } else {
-      router.push('/dashboard')
+      router.push(redirectTo || '/dashboard')
       router.refresh()
     }
   }

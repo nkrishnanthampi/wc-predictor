@@ -6,7 +6,7 @@ export default async function LandingPage({
 }: {
   searchParams: Promise<{ redirectTo?: string; message?: string }>
 }) {
-  const { message } = await searchParams
+  const { message, redirectTo } = await searchParams
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-green-800 to-green-600 px-4">
@@ -29,7 +29,7 @@ export default async function LandingPage({
           </div>
         )}
 
-        <LoginForm searchParams={searchParams} />
+        <LoginForm redirectTo={redirectTo} />
 
         <p className="text-center mt-6 text-xs text-green-200">
           Sign in with a magic link — no password needed.
